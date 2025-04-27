@@ -43,13 +43,14 @@ Before you begin, ensure you have the following installed:
 * **Node.js:** Version 18.x or later (includes npm). Alternatively, `yarn`.
 * **MySQL Server:** A running local instance (e.g., via Docker, direct install). Or a PostgreSQL server if you adapted the config.
 * **IDE:** Your preferred IDE (e.g., IntelliJ IDEA, VS Code).
+* **SQL Client:** A tool to connect to your database and run SQL scripts (e.g., MySQL Workbench, DBeaver, command-line `mysql`).
 * **Web Browser:** Chrome, Firefox, Brave, Edge, etc. (Disable ad blockers that might interfere with Google Maps API for testing).
 
 ## Getting Started
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/vatsalgandhi83/sj-hopes.git
+    git clone [https://github.com/vatsalgandhi83/sj-hopes.git](https://github.com/vatsalgandhi83/sj-hopes.git)
     cd sj-hopes
     ```
 
@@ -57,59 +58,74 @@ Before you begin, ensure you have the following installed:
     * **Navigate:** `cd backend/sjHopes`
     * **Database:**
         * Ensure your local MySQL server is running.
-        * Create a database schema (e.g., `sjhopes`). **Important:** For initial setup with sample data, ensure this schema is empty or that `ddl-auto` is set to `create` or `create-drop`.
-        * Create a MySQL user with privileges on this database.
+        * Create a database schema named `sjhopes`. Use UTF-8 character set: `CREATE DATABASE sjhopes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+        * Create a MySQL user (e.g., `sjhopes_user`) with privileges on this database (e.g., `GRANT ALL PRIVILEGES ON sjhopes.* TO 'sjhopes_user'@'localhost' IDENTIFIED BY 'your_password'; FLUSH PRIVILEGES;`). Replace `your_password`!
     * **Configuration:**
         * Open `src/main/resources/application.properties`.
-        * Update the `spring.datasource.url` to match your MySQL instance and database name (e.g., `jdbc:mysql://localhost:3306/sjhopes?createDatabaseIfNotExist=true...`).
-        * Update `spring.datasource.username` and `spring.datasource.password` with your MySQL user credentials.
-        * Ensure `spring.jpa.hibernate.ddl-auto` is set appropriately (use `create-drop` or `update` for local dev if you want tables created/updated automatically). **Note:** `create-drop` will wipe data on each restart.
-    * **Sample Data:**
-        * The backend includes a `DataLoader.java` component.
-        * When the application starts **and** connects to an empty database (or if `ddl-auto` is set to `create` or `create-drop`), this component will automatically populate the database with sample Shelter, Client, and Task records based on the data discussed during development.
-        * This allows you to quickly have data to interact with in the UI after setting up the database connection.
+        * Update the `spring.datasource.url` to `jdbc:mysql://localhost:3306/sjhopes?createDatabaseIfNotExist=false&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC` (set `createDatabaseIfNotExist=false` if you created it manually).
+        * Update `spring.datasource.username` and `spring.datasource.password` with the credentials for the user you created.
+        * Set `spring.jpa.hibernate.ddl-auto` appropriately:
+            * Use `create` or `update` the *first time* you run the backend to let Hibernate create the tables based on your entities.
+            * After the tables are created, switch to `validate` or `none` if you plan to manage data primarily via the SQL scripts, to prevent accidental data loss or unexpected schema changes. `validate` is recommended.
+    * **Sample Data (Choose ONE method or manage carefully):**
+        * **Method A: Automatic Loading (via `DataLoader.java`)**
+            * If `spring.jpa.hibernate.ddl-auto` is set to `create` or `create-drop` (or `update` on an empty schema), the included `DataLoader.java` component will attempt to insert sample Shelter, Client, and Task records automatically when the backend starts.
+        * **Method B: Manual Loading (via SQL Scripts)**
+            * SQL scripts containing sample data are located in the `/backend/sql/sample-data/` directory (`01-shelters.sql`, `02-clients.sql`, `03-tasks.sql`).
+            * **Important:** Use this method *after* the database tables have been created (e.g., after running once with `ddl-auto=update` or `create`, then switching `ddl-auto` to `validate`).
+            * Connect to your `sjhopes` database using an SQL client.
+            * Execute the scripts **in order** (01 -> 02 -> 03).
+            * *Example using mysql command line:*
+                ```bash
+                mysql -u sjhopes_user -p sjhopes < ../sql/sample-data/01-shelters.sql
+                mysql -u sjhopes_user -p sjhopes < ../sql/sample-data/02-clients.sql
+                mysql -u sjhopes_user -p sjhopes < ../sql/sample-data/03-tasks.sql
+                ```
+                (Enter your password when prompted).
     * **Build (Optional - Run usually builds):**
         ```bash
         ./gradlew build
         ```
 
 3.  **Frontend Setup (`/frontend` directory):**
-    * **Navigate:** `cd ../frontend` (assuming sibling directories)
+    * **Navigate:** `cd ../../frontend` (from `/backend/sjHopes`)
     * **Install Dependencies:**
         ```bash
         npm install
         ```
     * **Environment Variables:**
         * Create a file named `.env.local` in the `/frontend` directory.
-        * Add your API key:
+        * Add your API key and the **correct backend URL/port**:
             ```env
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_Maps_API_KEY_HERE
+            NEXT_PUBLIC_Maps_API_KEY=YOUR_Maps_API_KEY_HERE
             ```
+        * Replace `YOUR_Maps_API_KEY_HERE` with your actual key.
 
 ## Running the Application (Local Demo)
 
-1.  **Run the Backend:**
-    * Navigate to the `/backend/sjHomes` directory.
+1.  **Ensure Data:** Make sure sample data exists in your `sjhopes` database (either loaded automatically via `DataLoader` or manually via SQL scripts).
+2.  **Run the Backend:**
+    * Navigate to the `/backend/sjHopes` directory.
     * Execute:
         ```bash
         ./gradlew bootRun
         ```
     * Or run the main application class (`SjHopeNavigatorApplication.java`) from your IDE.
-    * The backend should start on `http://localhost:8081` (or the configured port). Check the console logs to ensure the `DataLoader` ran if expected.
+    * The backend should start on **`http://localhost:8081`**. Check console logs.
 
-2.  **Run the Frontend:**
+3.  **Run the Frontend:**
     * Navigate to the `/frontend` directory.
     * Execute:
         ```bash
         npm run dev
         ```
-    * The frontend development server should start, typically on `http://localhost:3000`. Open this URL in your browser. You should see UI elements populated with the sample data loaded in the backend.
+    * The frontend development server should start, typically on `http://localhost:3000`. Open this URL in your browser.
 
 ## API Documentation (Swagger)
 
-Once the backend is running locally, you can access the interactive API documentation:
+Once the backend is running locally, access the interactive API documentation via Swagger UI:
 
-* **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8081/swagger-ui/index.html)
+* **Swagger UI:** [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui.html)
 
 ## Contributors
 
