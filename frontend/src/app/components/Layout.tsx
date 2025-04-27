@@ -1,4 +1,6 @@
-import React from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -21,6 +23,7 @@ import {
   Task,
 } from "@mui/icons-material";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -38,7 +41,13 @@ const Layout: React.FC<LayoutProps> = ({
   onLogout,
 }) => {
   const theme = useTheme();
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -54,6 +63,11 @@ const Layout: React.FC<LayoutProps> = ({
       onLogout();
     }
   };
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -101,7 +115,7 @@ const Layout: React.FC<LayoutProps> = ({
                 display: { xs: "none", sm: "block" },
               }}
             >
-              | Housing & Homeless Services
+              | Connecting Shelter and Support
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
