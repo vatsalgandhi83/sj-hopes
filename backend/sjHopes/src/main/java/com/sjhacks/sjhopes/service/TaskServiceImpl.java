@@ -65,7 +65,7 @@ public class TaskServiceImpl implements TaskService {
         Optional<Task> taskOpt = taskRepository.findById(taskId);
         if (taskOpt.isPresent()) {
             Task task = taskOpt.get();
-            if (task.getStatus() == TaskStatus.OPEN) {
+            if (task.getStatus() == TaskStatus.OPEN || task.getStatus() == TaskStatus.ASSIGNED) {
                 task.setStatus(TaskStatus.ASSIGNED);
                 task.setClientId(clientId); // Save Long ID
                 taskRepository.save(task);

@@ -1,11 +1,11 @@
 package com.sjhacks.sjhopes.models.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class TaskAssignRequestDto {
 
-    @NotBlank(message = "Client ID cannot be blank")
+    @NotNull(message = "Client ID cannot be null")
     private Long clientId;
 }

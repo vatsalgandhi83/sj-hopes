@@ -21,7 +21,7 @@ public class ClientMapper {
         if (entity == null) return null;
         ClientResponseDto dto = new ClientResponseDto();
         dto.setId(entity.getId());
-        dto.setPseudonym(entity.getName());
+        dto.setName(entity.getName());
         dto.setStatus(entity.getStatus());
         // Safely get shelter ID and name if shelter is not null
         if (entity.getCurrentShelter() != null) {

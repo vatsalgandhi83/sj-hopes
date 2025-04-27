@@ -1,165 +1,242 @@
 // src/components/LoginScreen.tsx
 import React, { useState } from 'react';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import CircularProgress from '@mui/material/CircularProgress';
-import { Home, Person, AdminPanelSettings } from '@mui/icons-material';
-import Alert from '@mui/material/Alert';
-
-type UserType = 'caseworker' | 'admin';
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  useTheme,
+  Alert,
+  Divider
+} from '@mui/material';
+import { Close, Login as LoginIcon } from '@mui/icons-material';
 
 interface LoginScreenProps {
-  onLogin: (userType: UserType, email: string) => void;
+  onLogin: (type: 'caseworker' | 'admin', name: string) => void;
+  onClose: () => void;
+  context?: 'reserve' | 'general';
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-  const [userType, setUserType] = useState<UserType>('caseworker');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+const DEMO_CREDENTIALS = {
+  caseworker: {
+    email: 'demo@example.com',
+    password: 'password'
+  },
+  admin: {
+    email: 'admin@example.com',
+    password: 'admin123'
+  }
+};
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onClose, context = 'general' }) => {
+  const theme = useTheme();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    type: context === 'reserve' ? 'caseworker' as const : 'caseworker' as 'caseworker' | 'admin'
+  });
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      // Hardcoded credential check
-      if (
-        (userType === 'caseworker' && email === 'demo@example.com' && password === 'password') ||
-        (userType === 'admin' && email === 'admin@example.com' && password === 'admin123')
-      ) {
-        onLogin(userType, email);
-      } else {
-        setError('Invalid credentials. Please use the demo credentials shown below.');
-      }
-      setIsLoading(false);
-    }, 800);
+
+    // Validate credentials
+    const demoCreds = DEMO_CREDENTIALS[formData.type];
+    if (formData.email === demoCreds.email && formData.password === demoCreds.password) {
+      onLogin(formData.type, formData.type === 'admin' ? 'Admin User' : 'Case Worker');
+    } else {
+      setError('Invalid credentials. Please use the demo credentials provided.');
+    }
+  };
+
+  const handleDemoLogin = (type: 'caseworker' | 'admin') => {
+    setFormData({
+      email: DEMO_CREDENTIALS[type].email,
+      password: DEMO_CREDENTIALS[type].password,
+      type
+    });
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        height: '90vh',
-        width: '100vw',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 0,
-        m: 0,
+    <Dialog
+      open={true}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        }
       }}
     >
-      <Paper
-        elevation={8}
-        sx={{
-          width: '100%',
-          maxWidth: 350,
-          maxHeight: '95vh',
-          overflow: 'auto',
-          borderRadius: 4,
-          p: { xs: 2, sm: 3 },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Box
+      <DialogTitle>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography 
+            variant="h5" 
+            fontWeight={700}
             sx={{
-              width: 64,
-              height: 64,
-              bgcolor: 'primary.main',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 2,
+              background: 'linear-gradient(45deg, #1a237e 30%, #283593 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
             }}
           >
-            <Home sx={{ color: 'white', fontSize: 36 }} />
-          </Box>
-          <Typography variant="h4" fontWeight={700} color="text.primary" align="center" gutterBottom>
-            SJ Shelter Hub
+            Welcome to SJ Hopes
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary" align="center">
-            Connecting people to shelter and opportunities
-          </Typography>
-        </Box>
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 2 }}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="user-type-label">User Type</InputLabel>
-            <Select
-              labelId="user-type-label"
-              value={userType}
-              label="User Type"
-              onChange={(e) => setUserType(e.target.value as UserType)}
-              disabled={isLoading}
-            >
-              <MenuItem value="caseworker">
-                <Person sx={{ mr: 1, verticalAlign: 'middle' }} fontSize="small" /> Caseworker
-              </MenuItem>
-              <MenuItem value="admin">
-                <AdminPanelSettings sx={{ mr: 1, verticalAlign: 'middle' }} fontSize="small" /> Administrator
-              </MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
-            autoComplete="email"
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            autoComplete="current-password"
-          />
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            sx={{ mt: 3, mb: 2, borderRadius: 2, fontWeight: 600 }}
-            disabled={isLoading}
+          <IconButton 
+            onClick={onClose} 
+            size="small"
+            sx={{
+              color: theme.palette.grey[500],
+              '&:hover': {
+                color: theme.palette.grey[700],
+                backgroundColor: 'rgba(0,0,0,0.04)'
+              }
+            }}
           >
-            {isLoading ? <><CircularProgress size={24} sx={{ color: 'white', mr: 2 }} /> Signing In...</> : 'Sign In'}
-          </Button>
+            <Close />
+          </IconButton>
         </Box>
-        <Box sx={{ mt: 3, textAlign: 'center', color: 'text.secondary', fontSize: 14 }}>
-          <Typography variant="body2" color="text.secondary">
-            Demo credentials:
-          </Typography>
-          <Typography variant="caption" display="block">
-            Caseworker: demo@example.com / password
-          </Typography>
-          <Typography variant="caption" display="block">
-            Admin: admin@example.com / admin123
-          </Typography>
-        </Box>
-      </Paper>
-    </Box>
+      </DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <form onSubmit={handleSubmit}>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              sx={{ 
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.primary.main
+                  }
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+              sx={{ 
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.primary.main
+                  }
+                }
+              }}
+            />
+            {context === 'general' && (
+              <FormControl 
+                fullWidth 
+                sx={{ 
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.primary.main
+                    }
+                  }
+                }}
+              >
+                <InputLabel>Login As</InputLabel>
+                <Select
+                  value={formData.type}
+                  label="Login As"
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'caseworker' | 'admin' })}
+                >
+                  <MenuItem value="caseworker">Caseworker</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+              startIcon={<LoginIcon />}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                py: 1.5,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+                }
+              }}
+            >
+              Sign In
+            </Button>
+
+            <Divider sx={{ my: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Demo Credentials
+              </Typography>
+            </Divider>
+
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+              {context === 'general' && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  onClick={() => handleDemoLogin('admin')}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600
+                  }}
+                >
+                  Use Admin Demo Account
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                color="primary"
+                fullWidth
+                onClick={() => handleDemoLogin('caseworker')}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Use Caseworker Demo Account
+              </Button>
+            </Box>
+          </Box>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

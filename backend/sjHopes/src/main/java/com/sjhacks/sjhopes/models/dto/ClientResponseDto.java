@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public class ClientResponseDto {
 
     private Long id;
-    private String pseudonym;
+    private String name;
     private ClientStatus status;
     private Long currentShelterId;
     private String currentShelterName;

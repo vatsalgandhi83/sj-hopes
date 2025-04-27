@@ -18,13 +18,13 @@ export interface Shelter {
   longitude: number;
   totalCapacity: number;
   currentAvailability: number;
-  shelterType: ShelterType;
+  shelterType?: ShelterType;
   phone?: string;
   email?: string;
   operatingOrganization?: string;
   description?: string;
-  allowsPets: boolean;
-  allowsPartner: boolean;
-  lastUpdated: string;
-  isActive: boolean;
+  allowsPets?: boolean;
+  allowsPartner?: boolean;
+  lastUpdated?: string;
+  isActive?: boolean;
 } 
