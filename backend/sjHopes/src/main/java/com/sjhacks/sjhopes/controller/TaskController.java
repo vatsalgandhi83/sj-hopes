@@ -4,6 +4,7 @@ import com.sjhacks.sjhopes.mapper.TaskMapper;
 import com.sjhacks.sjhopes.models.dto.TaskAssignRequestDto;
 import com.sjhacks.sjhopes.models.dto.TaskResponseDto;
 import com.sjhacks.sjhopes.service.TaskService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,10 @@ public class TaskController {
                 log.warn("CONTROLLER: Assignment failed for task id: {}", id);
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assignment failed: Task not found or not in OPEN status.");
             }
-        } catch (IllegalArgumentException e) {
+        }catch (EntityNotFoundException enfe) { // Catch client not found from service
+            log.warn("CONTROLLER: Task assignment failed for task {}: {}", id, enfe.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, enfe.getMessage()); // Return 404 if client doesn't exist
+        } catch (IllegalArgumentException e) { // Catch other validation errors from service
             log.error("CONTROLLER: Task assignment failed validation: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
         } catch (ResponseStatusException rse) { throw rse; }

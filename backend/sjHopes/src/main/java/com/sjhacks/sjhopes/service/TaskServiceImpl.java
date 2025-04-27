@@ -2,7 +2,9 @@ package com.sjhacks.sjhopes.service;
 
 import com.sjhacks.sjhopes.models.entity.Task;
 import com.sjhacks.sjhopes.models.enums.TaskStatus;
+import com.sjhacks.sjhopes.repository.ClientRepository;
 import com.sjhacks.sjhopes.repository.TaskRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
 
     @Override
     public List<Task> getAllTasks() {
@@ -47,37 +52,38 @@ public class TaskServiceImpl implements TaskService {
 
     // Method to assign a task to a client (used by Caseworker)
     @Transactional
-    public boolean assignTask(Long taskId, String clientId) {
-        log.info("Service: Attempting assignment of task id: {} to client: {}", taskId, clientId);
-        // Validate clientId
-        if (!StringUtils.hasText(clientId)) {
-            log.error("Task assignment failed for task id: {}. Client ID is missing or empty.", taskId);
-            throw new IllegalArgumentException("Client ID cannot be empty for assignment.");
+    @Override
+    public boolean assignTask(Long taskId, Long clientId) {
+        log.info("Service: Attempting assignment of task id: {} to client id: {}", taskId, clientId);
+
+        // Validate client exists before assigning
+        if (!clientRepository.existsById(clientId)) {
+            log.error("Task assignment failed for task id: {}. Client ID {} does not exist.", taskId, clientId);
+            throw new EntityNotFoundException("Client not found with id: " + clientId);
         }
 
-        // Find the task
         Optional<Task> taskOpt = taskRepository.findById(taskId);
         if (taskOpt.isPresent()) {
             Task task = taskOpt.get();
-            // Check if task is OPEN for assignment
             if (task.getStatus() == TaskStatus.OPEN) {
-                // Update status and assign client ID
                 task.setStatus(TaskStatus.ASSIGNED);
-                task.setClientId(clientId);
-                taskRepository.save(task); // Save changes
-                log.info("Service: Task id: {} assigned successfully to client: {}", taskId, clientId);
-                return true; // Success
+                task.setClientId(clientId); // Save Long ID
+                taskRepository.save(task);
+                log.info("Service: Task id: {} assigned successfully to client id: {}", taskId, clientId);
+                return true;
             } else {
                 log.warn("Service: Task assignment failed for task id: {}. Task status is not OPEN (current: {})", taskId, task.getStatus());
                 return false; // Task not open
             }
         }
+
         log.warn("Service: Task assignment failed. Task not found for id: {}", taskId);
         return false; // Task not found
     }
 
     // Optional: Method to mark a task as complete
     @Transactional
+    @Override
     public boolean completeTask(Long taskId) {
         log.info("Service: Attempting completion of task id: {}", taskId);
         Optional<Task> taskOpt = taskRepository.findById(taskId);
@@ -101,6 +107,7 @@ public class TaskServiceImpl implements TaskService {
 
     // Method to update an existing task (used by Admin)
     @Transactional
+    @Override
     public Task updateTask(Long id, Task taskDetails) {
         log.info("Service: Attempting to update task id: {}", id);
         if (!StringUtils.hasText(taskDetails.getTitle())) {
@@ -136,6 +143,7 @@ public class TaskServiceImpl implements TaskService {
 
     // Method to delete a task (used by Admin)
     @Transactional
+    @Override
     public boolean deleteTask(Long id) {
         log.info("Service: Attempting to delete task id: {}", id);
         if (taskRepository.existsById(id)) {

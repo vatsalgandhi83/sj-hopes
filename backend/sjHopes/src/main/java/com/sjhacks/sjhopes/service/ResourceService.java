@@ -16,7 +16,7 @@ public interface ResourceService {
 
     Shelter saveShelter(Shelter shelter);
 
-    boolean reserveShelterBed(Long shelterId);
+    boolean reserveShelterBed(Long shelterId, Long clientId);
 
     boolean deleteShelter(Long id);
 

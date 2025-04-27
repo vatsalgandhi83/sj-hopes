@@ -1,5 +1,6 @@
 package com.sjhacks.sjhopes.repository;
 
+import com.sjhacks.sjhopes.models.dto.ShelterTypeSummaryDto;
 import com.sjhacks.sjhopes.models.entity.Shelter;
 import com.sjhacks.sjhopes.models.enums.ShelterType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,25 @@ public interface ShelterRepository extends JpaRepository<Shelter, Long> {
             @Param("shelterType") ShelterType shelterType,
             @Param("isActive") Boolean isActive
     );
+
+    // --- New Methods for Analytics ---
+    long countByIsActive(boolean isActive);
+
+    long countByAllowsPetsAndIsActive(boolean allowsPets, boolean isActive);
+
+    long countByAllowsPartnerAndIsActive(boolean allowsPartner, boolean isActive);
+
+    // Use JPQL SUM aggregate function - Ensure return type matches (Long or handle null)
+    @Query("SELECT SUM(s.totalCapacity) FROM shelters s WHERE s.isActive = true")
+    Long getTotalActiveCapacity(); // Can return null if no active shelters
+
+    @Query("SELECT SUM(s.currentAvailability) FROM shelters s WHERE s.isActive = true")
+    Long getCurrentActiveAvailability(); // Can return null
+
+    // Query to group by ShelterType and calculate aggregates
+    // Using constructor expression to map results directly to DTO
+    @Query("SELECT new com.sjhacks.sjhopes.models.dto.ShelterTypeSummaryDto(" +
+            "s.shelterType, COUNT(s), SUM(s.totalCapacity), SUM(s.currentAvailability), 0.0) " + // Placeholder for rate
+            "FROM shelters s WHERE s.isActive = true GROUP BY s.shelterType")
+    List<ShelterTypeSummaryDto> getActiveShelterTypeSummaries();
 }

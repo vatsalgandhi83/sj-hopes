@@ -13,7 +13,7 @@ public interface TaskService {
 
     Task createTask(Task task);
 
-    boolean assignTask(Long taskId, String clientId);
+    boolean assignTask(Long taskId, Long clientId);
 
     boolean completeTask(Long taskId);
 

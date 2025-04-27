@@ -13,7 +13,7 @@ public class TaskResponseDto {
     private String description;
     private String location;
     private TaskStatus status;
-    private String clientId; // Include assigned client ID if present
+    private Long clientId; // Include assigned client ID if present
     private LocalDateTime lastUpdated;
     private LocalDateTime taskDateTime;
     private String estimatedDuration;

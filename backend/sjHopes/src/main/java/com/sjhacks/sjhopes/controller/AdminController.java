@@ -2,12 +2,10 @@ package com.sjhacks.sjhopes.controller;
 
 import com.sjhacks.sjhopes.mapper.ShelterMapper;
 import com.sjhacks.sjhopes.mapper.TaskMapper;
-import com.sjhacks.sjhopes.models.dto.ShelterRequestDto;
-import com.sjhacks.sjhopes.models.dto.ShelterResponseDto;
-import com.sjhacks.sjhopes.models.dto.TaskRequestDto;
-import com.sjhacks.sjhopes.models.dto.TaskResponseDto;
+import com.sjhacks.sjhopes.models.dto.*;
 import com.sjhacks.sjhopes.models.entity.Shelter;
 import com.sjhacks.sjhopes.models.entity.Task;
+import com.sjhacks.sjhopes.service.AnalyticsService;
 import com.sjhacks.sjhopes.service.ResourceService;
 import com.sjhacks.sjhopes.service.TaskService;
 import jakarta.validation.Valid;
@@ -17,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -28,6 +28,8 @@ public class AdminController {
     private ResourceService resourceService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private AnalyticsService analyticsService;
 
     @PostMapping("/shelters")
     public ResponseEntity<ShelterResponseDto> addShelter(@Valid @RequestBody ShelterRequestDto shelterRequest) {
@@ -136,6 +138,40 @@ public class AdminController {
             return ResponseEntity.noContent().build();
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id " + id);
+        }
+    }
+
+    @GetMapping("/analytics/shelter-summary")
+    public ResponseEntity<ShelterSummaryDto> getShelterSummary() {
+        try {
+            ShelterSummaryDto summary = analyticsService.getShelterSummary();
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("ADMIN CONTROLLER: Error getting shelter summary", e);
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving shelter summary", e);
+        }
+    }
+
+    @GetMapping("/analytics/task-summary")
+    public ResponseEntity<TaskSummaryDto> getTaskSummary() {
+        try {
+            TaskSummaryDto summary = analyticsService.getTaskSummary();
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("ADMIN CONTROLLER: Error getting task summary", e);
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving task summary", e);
+        }
+    }
+
+    @GetMapping("/analytics/shelter-types")
+    public ResponseEntity<List<ShelterTypeSummaryDto>> getShelterTypeSummary() {
+        log.info("ADMIN CONTROLLER: GET /api/admin/analytics/shelter-types invoked");
+        try {
+            List<ShelterTypeSummaryDto> summaryList = analyticsService.getShelterTypeSummaries();
+            return ResponseEntity.ok(summaryList);
+        } catch (Exception e) {
+            log.error("ADMIN CONTROLLER: Error getting shelter type summary", e);
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving shelter type summary", e);
         }
     }
 }

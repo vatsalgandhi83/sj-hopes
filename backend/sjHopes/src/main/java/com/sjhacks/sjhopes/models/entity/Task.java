@@ -32,7 +32,7 @@ public class Task {
     private TaskStatus status = TaskStatus.OPEN; // Default to OPEN when created
 
     @Column(nullable = true) // Null when the task is OPEN
-    private String clientId; // ID of the client assigned to the task
+    private Long clientId; // ID of the client assigned to the task
 
     @UpdateTimestamp
     @Column(nullable = false)

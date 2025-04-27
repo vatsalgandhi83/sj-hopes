@@ -1,10 +1,13 @@
 package com.sjhacks.sjhopes.controller;
 
 import com.sjhacks.sjhopes.mapper.ShelterMapper;
+import com.sjhacks.sjhopes.models.dto.ShelterReserveRequestDto;
 import com.sjhacks.sjhopes.models.dto.ShelterResponseDto;
 import com.sjhacks.sjhopes.models.entity.Shelter;
 import com.sjhacks.sjhopes.models.enums.ShelterType;
 import com.sjhacks.sjhopes.service.ResourceService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -65,20 +68,24 @@ public class ResourceController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /api/shelters/{id}/reserve - Logic remains the same, no DTO needed here
     @PostMapping("/shelters/{id}/reserve")
-    public ResponseEntity<Void> reserveShelter(@PathVariable Long id) {
+    public ResponseEntity<Void> reserveShelter(@PathVariable Long id, @Valid @RequestBody ShelterReserveRequestDto reservationRequest) {
         try {
-            boolean success = resourceService.reserveShelterBed(id);
+            boolean success = resourceService.reserveShelterBed(id, reservationRequest.getClientId());
             if (success) {
                 return ResponseEntity.ok().build();
             } else {
-                log.warn("CONTROLLER: Reservation failed for shelter id: {}", id);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation failed: Shelter not found or no availability.");
+                // Failure could be due to various reasons checked in the service
+                log.warn("CONTROLLER: Reservation failed for shelter id: {} / client id: {}", id, reservationRequest.getClientId());
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation failed: Shelter/client not found, no availability, or client link failed.");
             }
-        } catch (ResponseStatusException rse) { throw rse; }
-        catch (Exception e) {
-            log.error("CONTROLLER: Unexpected error during reservation for shelter id: {}", id, e);
+        } catch (EntityNotFoundException enfe) {
+            log.warn("CONTROLLER: Reservation failed for shelter {}: {}", id, enfe.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, enfe.getMessage());
+        } catch (ResponseStatusException rse) {
+            throw rse;
+        } catch (Exception e) {
+            log.error("CONTROLLER: Unexpected error during reservation for shelter id: {} / client id: {}", id, reservationRequest.getClientId(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing reservation", e);
         }
     }

@@ -3,6 +3,7 @@ package com.sjhacks.sjhopes.service;
 import com.sjhacks.sjhopes.models.entity.Shelter;
 import com.sjhacks.sjhopes.models.enums.ShelterType;
 import com.sjhacks.sjhopes.repository.ShelterRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Autowired
     private ShelterRepository shelterRepository;
+
+    @Autowired
+    private ClientService clientService;
 
     // --- Method for the simple GET /api/shelters ---
     public List<Shelter> getAllActiveShelters() {
@@ -58,27 +62,31 @@ public class ResourceServiceImpl implements ResourceService {
     // Method to handle the reservation logic
     // Transactional is crucial here to ensure the check and update happen together
     @Transactional
-    public boolean reserveShelterBed(Long shelterId) {
-        log.info("Service: Attempting reservation for shelter id: {}", shelterId);
-        // Find the shelter by ID
+    public boolean reserveShelterBed(Long shelterId, Long clientId) {
+        log.info("Service: Attempting reservation for shelter id: {} for client id: {}", shelterId, clientId);
         Optional<Shelter> shelterOpt = shelterRepository.findById(shelterId);
 
-        // Check if shelter exists
         if (shelterOpt.isPresent()) {
             Shelter shelter = shelterOpt.get();
-            // Check if beds are available
             if (shelter.getCurrentAvailability() > 0) {
-                // Decrease availability by 1
                 shelter.setCurrentAvailability(shelter.getCurrentAvailability() - 1);
-                // Save the updated shelter record back to the database
                 shelterRepository.save(shelter);
-                log.info("Service: Reservation successful for shelter id: {}. New availability: {}", shelterId, shelter.getCurrentAvailability());
-                return true; // Indicate success
+
+                // *** Link client to shelter after successful reservation ***
+                try {
+                    clientService.assignShelterToClient(clientId, shelterId);
+                    log.info("Service: Reservation successful for shelter id: {} / client id: {}.", shelterId, clientId);
+                    return true; // Success
+                } catch (EntityNotFoundException e) {
+                    log.error("Service: Reservation succeeded but failed to link client {} to shelter {}: {}", clientId, shelterId, e.getMessage());
+                    throw new RuntimeException("Failed to link client after reservation", e);
+                }
             } else {
                 log.warn("Service: Reservation failed for shelter id: {}. No availability.", shelterId);
                 return false; // Indicate failure: No availability
             }
         }
+
         log.warn("Service: Reservation failed. Shelter not found for id: {}", shelterId);
         return false; // Indicate failure: Shelter not found
     }

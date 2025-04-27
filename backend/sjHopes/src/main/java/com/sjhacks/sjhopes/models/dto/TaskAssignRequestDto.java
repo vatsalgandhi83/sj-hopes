@@ -7,5 +7,5 @@ import lombok.Data;
 public class TaskAssignRequestDto {
 
     @NotBlank(message = "Client ID cannot be blank")
-    private String clientId;
+    private Long clientId;
 }
